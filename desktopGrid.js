@@ -16,42 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+const GObject = imports.gi.GObject;
 const Gtk = imports.gi.Gtk;
+const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
+const GdkPixbuf = imports.gi.GdkPixbuf;
 
 const Prefs = imports.prefs;
 const DesktopIconsUtil = imports.desktopIconsUtil;
 const Signals = imports.signals;
 
-/*const Clipboard = St.Clipboard.get_default();
-const CLIPBOARD_TYPE = St.ClipboardType.CLIPBOARD;*/
-
 const Gettext = imports.gettext.domain('desktop-icons');
 
 const _ = Gettext.gettext;
 
-
-/* From NautilusFileUndoManagerState */
-var UndoStatus = {
-    NONE: 0,
-    UNDO: 1,
-    REDO: 2,
-};
-
-var StoredCoordinates = {
-    PRESERVE: 0,
-    OVERWRITE:1,
-    ASSIGN:2,
-};
-
-class Placeholder extends Gtk.Bin {
-    constructor() {
-        super();
-    }
-}
-
-var scaleFactor = 1.0;
 
 var DesktopGrid = class {
 
@@ -61,79 +40,36 @@ var DesktopGrid = class {
         this._y = y;
         this._width = width;
         this._height = height;
-        this._fileItemHandlers = new Map();
-        this._fileItems = [];
+        this._columns = Math.floor(width / Prefs.get_desired_width(1.0));
+        this._rows = Math.floor(height / Prefs.get_desired_height(1.0));
 
-        this.actor = new Gtk.EventBox({ visible: true });
-
-        this._grid = new Gtk.Grid({
-            column_homogeneous: true,
-            row_homogeneous: true
+        this._treeModel = new Gtk.ListStore();
+        this._treeModel.set_column_types([GObject.TYPE_STRING, GdkPixbuf.Pixbuf]);
+        this._iters = [];
+        for(let i=0; i<this._rows * this._columns; i++) {
+            let iter = this._treeModel.append();
+            this._treeModel.set(iter, [0, 1], ["un texto", GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, true, 8, 40,40)]);
+            this._iters.push(iter);
+        }
+        this.actor = new Gtk.IconView({
+            expand: true,
+            model: this._treeModel,
+            text_column: 0,
+            pixbuf_column: 1,
+            expand: true,
+            item_width: -1,
+            item_padding: 0,
+            column_spacing: 0,
+            margin: 0
         });
-        this.actor._delegate = this;
-        this._grid.set_size_request(width, height);
 
-        this.actor.add(this._grid);
-
-        this.actor.connect('destroy', () => this._onDestroy());
-
-        this._addDesktopBackgroundMenu();
+/*        this._addDesktopBackgroundMenu();
 
         this.actor.connect('button-press-event', (actor, event) => this._onPressButton(actor, event));
-        this.actor.connect('key-press-event', this._onKeyPress.bind(this));
+        this.actor.connect('key-press-event', this._onKeyPress.bind(this));*/
         //this.actor.connect('allocation-changed', () => Extension.desktopManager.scheduleReLayoutChildren());
     }
 
-    _onKeyPress(actor, event) {
-        if (global.stage.get_key_focus() != actor)
-            return Clutter.EVENT_PROPAGATE;
-
-        let symbol = event.get_key_symbol();
-        let isCtrl = (event.get_state() & Clutter.ModifierType.CONTROL_MASK) != 0;
-        let isShift = (event.get_state() & Clutter.ModifierType.SHIFT_MASK) != 0;
-        if (isCtrl && isShift && [Clutter.Z, Clutter.z].indexOf(symbol) > -1) {
-            this._doRedo();
-            return Clutter.EVENT_STOP;
-        }
-        else if (isCtrl && [Clutter.Z, Clutter.z].indexOf(symbol) > -1) {
-            this._doUndo();
-            return Clutter.EVENT_STOP;
-        }
-        else if (isCtrl && [Clutter.C, Clutter.c].indexOf(symbol) > -1) {
-            Extension.desktopManager.doCopy();
-            return Clutter.EVENT_STOP;
-        }
-        else if (isCtrl && [Clutter.X, Clutter.x].indexOf(symbol) > -1) {
-            Extension.desktopManager.doCut();
-            return Clutter.EVENT_STOP;
-        }
-        else if (isCtrl && [Clutter.V, Clutter.v].indexOf(symbol) > -1) {
-            this._doPaste();
-            return Clutter.EVENT_STOP;
-        }
-        else if (symbol == Clutter.Return) {
-            Extension.desktopManager.doOpen();
-            return Clutter.EVENT_STOP;
-        }
-        else if (symbol == Clutter.Delete) {
-            Extension.desktopManager.doTrash();
-            return Clutter.EVENT_STOP;
-        } else if (symbol == Clutter.F2) {
-            // Support renaming other grids file items.
-            Extension.desktopManager.doRename();
-            return Clutter.EVENT_STOP;
-        }
-
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    _backgroundDestroyed() {
-        this._bgDestroyedId = 0;
-    }
-
-    _onDestroy() {
-        this._bgDestroyedId = 0;
-    }
 
     _onNewFolderClicked() {
 

@@ -36,22 +36,14 @@ const _ = Gettext.gettext;
 
 const DRAG_TRESHOLD = 8;
 
-var Extension;
-
 var S_IXUSR = 0o00100;
 var S_IWOTH = 0o00002;
-
-var State = {
-    NORMAL: 0,
-    GONE: 1,
-};
 
 var scaleFactor = 1.0;
 
 var FileItem = class {
 
-    constructor(extension, file, fileInfo, fileExtra) {
-        Extension = extension;
+    constructor(file, fileInfo, fileExtra) {
         this._fileExtra = fileExtra;
         this._loadThumbnailDataCancellable = null;
         this._thumbnailScriptWatch = 0;
@@ -66,7 +58,6 @@ var FileItem = class {
         if (savedCoordinates != null)
             this._savedCoordinates = savedCoordinates.split(',').map(x => Number(x));
 
-        this._state = State.NORMAL;
 
         this.actor = new Gtk.EventBox({ visible: true });
         //TODO
@@ -149,7 +140,6 @@ var FileItem = class {
         if (this._queryFileInfoCancellable)
             this._queryFileInfoCancellable.cancel();
 
-        Extension.desktopManager.disconnect(this._writebleByOthersId);
 
         /* Thumbnailing */
         if (this._thumbnailScriptWatch)
@@ -174,8 +164,6 @@ var FileItem = class {
             GLib.source_remove(this._scheduleTrashRefreshId);
 
         /* Menu */
-        this._menuManager.removeMenu(this._menu);
-        Main.layoutManager.uiGroup.remove_child(this._menu.actor);
         this._menu.destroy();
     }
 
@@ -570,18 +558,7 @@ var FileItem = class {
             } else {
                 this._actionOpenWith = null;
             }
-            this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            this._actionCut = this._menu.addAction(_('Cut'), () => this._onCutClicked());
-            this._actionCopy = this._menu.addAction(_('Copy'), () => this._onCopyClicked());
-            if (this.canRename())
-                this._menu.addAction(_('Rename…'), () => this.doRename());
-            this._actionTrash = this._menu.addAction(_('Move to Trash'), () => this._onMoveToTrashClicked());
-            if (this._isValidDesktopFile && !Extension.desktopManager.writableByOthers && !this._writableByOthers) {
-                this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-                this._allowLaunchingMenuItem = this._menu.addAction(this._allowLaunchingText,
-                                                                    () => this._onAllowDisallowLaunchingClicked());
-
-            }
+            this._menu.add(new Gtk.SeparatorMenuItem());
             break;
         case Prefs.FileType.USER_DIRECTORY_TRASH:
             this._menu.add(new Gtk.SeparatorMenuItem());
@@ -780,7 +757,6 @@ var FileItem = class {
         return this._isValidDesktopFile &&
                this._attributeCanExecute &&
                this.metadataTrusted &&
-               !Extension.desktopManager.writableByOthers &&
                !this._writableByOthers;
     }
 

@@ -58,27 +58,18 @@ while ((info = fileList.next_file(null))) {
 }
 
 let ventana = new Gtk.Window();
-let escroll = Gtk.ScrolledWindow.new(null, null);
-ventana.add(escroll);
-let contenedor = new Gtk.Fixed();
 
-escroll.add(contenedor);
-
-let grid = new DesktopGrid.DesktopGrid(0, 0, 900, 800);
-
-contenedor.put(grid.actor, 0, 0);
+let grid = new DesktopGrid.DesktopGrid(0, 0, 1920, 1080);
+//let escroll = Gtk.ScrolledWindow.new(null, null);
+//ventana.add(escroll);
+ventana.add(grid.actor);
 
 for (let f of files) {
-    let icon = new Fileitem.FileItem(Extension, fileList.get_child(f), f, Prefs.FileType.NONE);
+    let icon = new Fileitem.FileItem(fileList.get_child(f), f, Prefs.FileType.NONE);
     let itemX = 0;
     let itemY = 0;
-    let coordinatesAction = DesktopGrid.StoredCoordinates.ASSIGN;
-    if (icon.savedCoordinates != null) {
-        [itemX, itemY] = icon.savedCoordinates;
-        coordinatesAction = DesktopGrid.StoredCoordinates.PRESERVE;
-    }
     print(icon.file.get_uri());
-    grid.addFileItemCloseTo(icon, itemX, itemY, coordinatesAction);
+    //grid.addFileItemCloseTo(icon, itemX, itemY, coordinatesAction);
 }
 
 ventana.show_all();
