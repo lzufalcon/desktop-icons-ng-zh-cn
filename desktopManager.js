@@ -94,7 +94,11 @@ var DesktopManager = GObject.registerClass({
                 Gtk.main_quit();
             }
         });
-
+        print("Viejo rol: " + this._window.get_role());
+        print("Viejo startup id: " + this._window.startup_id);
+        this._window.set_role("Este es el rol de la ventana");
+        this._window.set_wmclass("Esta es la clase WM de la ventana", "Y este es el otro texto de wmclass");
+        this._window.set_startup_id("Este es el startup id");
         // this only works on X11, so... let's keep uniformity and don't set them :-)
         //this._window.set_keep_below(true);
         //this._window.set_skip_pager_hint(true);

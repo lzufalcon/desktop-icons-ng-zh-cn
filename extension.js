@@ -168,6 +168,11 @@ function innerEnable() {
              * course, that value isn't fixed, but calculated automatically each time the
              * desktop geometry changes, so a bigger top bar will work fine.
              */
+            global.log("description: " + window.get_description());
+            global.log("wm_class: " + window.get_wm_class());
+            global.log("wm_class instance: " + window.get_wm_class_instance());
+            global.log("startup_id: " + window.get_startup_id());
+            global.log("role: " + window.get_role());
             window.move_frame(false,
                               data.minx,
                               data.miny);
