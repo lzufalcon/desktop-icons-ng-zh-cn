@@ -206,7 +206,7 @@ var DesktopGrid = class {
         return [x * this._zoom + this._x, y * this._zoom + this._y];
     }
 
-    _addFileItemTo(fileItem, column, row, coordinatesAction) {
+    addFileItemTo(fileItem, column, row, coordinatesAction) {
 
         let localX = Math.floor(this._width * column / this._maxColumns);
         let localY = Math.floor(this._height * row / this._maxRows);
@@ -238,12 +238,20 @@ var DesktopGrid = class {
             this._setGridUse(column, row, false);
             this._container.remove(fileItem.actor);
             delete this._fileItems[fileItem.uri];
+            return [column, row];
         }
+        /* The fileItem isn't in the list of fileItems. This can happen in some specific cases,
+         * like when a file is hidden, or when there are too many operations per second and
+         * there is no time to process all of them, like when a file is created and deleted
+         * very fast.
+         * In that case it will have no coordinates, so we return this value to indicate that.
+         */
+        return [-1, -1];
     }
 
     addFileItemCloseTo(fileItem, x, y, coordinatesAction) {
         let [column, row] = this._getEmptyPlaceClosestTo(x, y, coordinatesAction);
-        this._addFileItemTo(fileItem, column, row, coordinatesAction);
+        this.addFileItemTo(fileItem, column, row, coordinatesAction);
     }
 
     _isEmptyAt(x,y) {

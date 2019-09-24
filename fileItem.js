@@ -152,10 +152,15 @@ var FileItem = class {
     }
 
     removeFromGrid() {
+        let grid = null;
+        let x = -1;
+        let y = -1;
         if (this._grid) {
-            this._grid.removeItem(this);
+            grid = this._grid;
+            [x, y] = this._grid.removeItem(this);
             this._grid = null;
         }
+        return [grid, x, y];
     }
 
     _setDragSource() {
