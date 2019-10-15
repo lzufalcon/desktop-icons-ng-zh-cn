@@ -39,9 +39,8 @@ const _ = Gettext.gettext;
 
 var FileItem = class {
 
-    constructor(desktopManager, file, fileInfo, fileExtra, scaleFactor) {
+    constructor(desktopManager, file, fileInfo, fileExtra) {
         this._desktopManager = desktopManager;
-        this._scaleFactor = scaleFactor;
         this._fileExtra = fileExtra;
         this._loadThumbnailDataCancellable = null;
         this._thumbnailScriptWatch = 0;
@@ -67,7 +66,7 @@ var FileItem = class {
         this._icon = new Gtk.Image();
         this._iconContainer = new Gtk.Box({orientation: Gtk.Orientation.VERTICAL});
         this._container.pack_start(this._iconContainer, false, false, 0);
-        this._iconContainer.set_size_request(Prefs.get_desired_width(this._scaleFactor), Prefs.get_icon_size(this._scaleFactor));
+        this._iconContainer.set_size_request(Prefs.get_desired_width(), Prefs.get_icon_size());
         this._iconContainer.pack_start(this._icon, true, true, 0);
         this._iconContainer.set_baseline_position(Gtk.BaselinePosition.CENTER);
 
@@ -237,7 +236,7 @@ var FileItem = class {
         this._label.margin_end = margin;
         this._label.margin_bottom = margin;
         this._iconContainer.margin_top = margin;
-        this._label.setMaximumHeight(height - Prefs.get_icon_size(this._scaleFactor) - 2 * margin);
+        this._label.setMaximumHeight(height - Prefs.get_icon_size() - 2 * margin);
     }
 
     getCoordinates() {
@@ -401,15 +400,15 @@ var FileItem = class {
                             let thumbnailPixbuf = GdkPixbuf.Pixbuf.new_from_stream(thumbnailStream, null);
 
                             if (thumbnailPixbuf != null) {
-                                let width = Prefs.get_desired_width(this._scaleFactor);
-                                let height = Prefs.get_icon_size() * this._scaleFactor;
+                                let width = Prefs.get_desired_width();
+                                let height = Prefs.get_icon_size();
                                 let aspectRatio = thumbnailPixbuf.width / thumbnailPixbuf.height;
                                 if ((width / height) > aspectRatio)
                                     width = height * aspectRatio;
                                 else
                                     height = width / aspectRatio;
-                                this._xOrigin = Math.floor((Prefs.get_desired_width(this._scaleFactor) - width) / 2);
-                                this._yOrigin = Math.floor(((Prefs.get_icon_size() * this._scaleFactor) - height) / 2);
+                                this._xOrigin = Math.floor((Prefs.get_desired_width() - width) / 2);
+                                this._yOrigin = Math.floor((Prefs.get_icon_size() - height) / 2);
                                 let pixbuf = thumbnailPixbuf.scale_simple(Math.floor(width), Math.floor(height), GdkPixbuf.InterpType.BILINEAR);
                                 this._icon.set_from_pixbuf(pixbuf);
                                 this._dragSource.drag_source_set_icon_pixbuf(pixbuf);
@@ -483,9 +482,9 @@ var FileItem = class {
 
         let itemIcon = null;
         try {
-            itemIcon = theme.lookup_by_gicon(icon, Prefs.get_icon_size() * this._scaleFactor, Gtk.IconLookupFlags.FORCE_SIZE).load_icon();
+            itemIcon = theme.lookup_by_gicon(icon, Prefs.get_icon_size(), Gtk.IconLookupFlags.FORCE_SIZE).load_icon();
         } catch (e) {
-            itemIcon = theme.load_icon("text-x-generic", Prefs.get_icon_size() * this._scaleFactor, Gtk.IconLookupFlags.FORCE_SIZE);
+            itemIcon = theme.load_icon("text-x-generic", Prefs.get_icon_size(), Gtk.IconLookupFlags.FORCE_SIZE);
         }
 
         let emblem = null;
@@ -499,11 +498,11 @@ var FileItem = class {
         }
 
         if (emblem != null) {
-            let finalSize = (Prefs.get_icon_size() * this._scaleFactor) / 3;
+            let finalSize = Prefs.get_icon_size() / 3;
             let emblemIcon = theme.lookup_by_gicon(emblem, finalSize, Gtk.IconLookupFlags.FORCE_SIZE).load_icon();
             emblemIcon.copy_area(0, 0, finalSize, finalSize, itemIcon, 0, 0);
         }
-        this._xOrigin = Math.floor((Prefs.get_desired_width(this._scaleFactor) - (Prefs.get_icon_size() * this._scaleFactor)) / 2);
+        this._xOrigin = Math.floor((Prefs.get_desired_width() - Prefs.get_icon_size()) / 2);
         this._yOrigin = 0;
         return itemIcon;
     }
