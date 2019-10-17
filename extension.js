@@ -383,7 +383,7 @@ function launchDesktop() {
         let area = ws.get_work_area_for_monitor(monitorIndex);
         // send the working area of each monitor in the desktop
         argv.push('-D');
-        argv.push(area.x + ':' + area.y+':' + area.width + ':' + area.height);
+        argv.push(`${area.x}:${area.y}:${area.width}:${area.height}:${Main.layoutManager.monitors[monitorIndex].geometry_scale}`);
         if (first || (area.x < data.minx)) {
             data.minx = area.x;
         }
