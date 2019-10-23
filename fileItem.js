@@ -524,7 +524,8 @@ var FileItem = class {
         }
 
         if (this.trustedDesktopFile) {
-            this._desktopFile.launch_uris_as_manager([], null, GLib.SpawnFlags.SEARCH_PATH, null, null);
+            let launch_context = Gdk.Display.get_default().get_app_launch_context();
+            this._desktopFile.launch_uris_as_manager([], launch_context, GLib.SpawnFlags.SEARCH_PATH, null, null);
             return;
         }
 
