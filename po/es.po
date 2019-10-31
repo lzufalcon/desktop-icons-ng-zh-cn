@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-24 23:03+0200\n"
-"PO-Revision-Date: 2019-10-24 23:04+0200\n"
+"POT-Creation-Date: 2019-10-31 22:17+0100\n"
+"PO-Revision-Date: 2019-10-31 22:17+0100\n"
 "Last-Translator: Sergio Costas <rastersoft@gmail.com>\n"
 "Language-Team: Español; Castellano <rastersoft@gmail.com>\n"
 "Language: es\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Gtranslator 3.34.0\n"
 
-#: ../preferences.js:83 ../desktopManager.js:461
+#: ../preferences.js:83 ../desktopManager.js:351
 msgid "Settings"
 msgstr "Configuración"
 
@@ -72,103 +72,119 @@ msgstr "Mostrar archivos ocultos"
 msgid "Show a context menu item to delete permanently"
 msgstr "Permitir borrar permanentemente desde el menú contextual"
 
+#: ../preferences.js:104
+msgid "Show image thumbnails"
+msgstr "Mostrar miniaturas de imágenes"
+
+#: ../preferences.js:104
+msgid "Never"
+msgstr "Nunca"
+
+#: ../preferences.js:104
+msgid "Local files only"
+msgstr "Sólo ficheros locales"
+
+#: ../preferences.js:104
+msgid "Always"
+msgstr "Siempre"
+
 #: ../desktopIconsUtil.js:67
 msgid "Command not found"
 msgstr "Comando no encontrado"
 
-#: ../fileItem.js:571
+#: ../fileItem.js:614
 msgid "Don’t Allow Launching"
 msgstr "No permitir lanzar"
 
-#: ../fileItem.js:573
+#: ../fileItem.js:616
 msgid "Allow Launching"
 msgstr "Permitir lanzar"
 
-#: ../fileItem.js:639
+#: ../fileItem.js:682
 msgid "Open"
 msgstr "Abrir"
 
-#: ../fileItem.js:645
+#: ../fileItem.js:688
 msgid "Open With Other Application"
 msgstr "Abrir con otra aplicación"
 
-#: ../fileItem.js:652
+#: ../fileItem.js:695
 msgid "Cut"
 msgstr "Cortar"
 
-#: ../fileItem.js:655
+#: ../fileItem.js:698
 msgid "Copy"
 msgstr "Copiar"
 
-#: ../fileItem.js:659
+#: ../fileItem.js:702
 msgid "Rename…"
 msgstr "Renombrar…"
 
-#: ../fileItem.js:663
+#: ../fileItem.js:706
 msgid "Move to Trash"
 msgstr "Mover a la papelera"
 
-#: ../fileItem.js:667
+#: ../fileItem.js:710
 msgid "Delete permanently"
 msgstr "Borrar permanentemente"
 
-#: ../fileItem.js:680
+#: ../fileItem.js:723
 msgid "Empty Trash"
 msgstr "Vaciar la papelera"
 
-#: ../fileItem.js:688
+#: ../fileItem.js:731
 msgid "Properties"
 msgstr "Propiedades"
 
-#: ../fileItem.js:692
+#: ../fileItem.js:735
 msgid "Show in Files"
 msgstr "Mostrar en Files"
 
-#: ../fileItem.js:696 ../desktopManager.js:439
+#: ../fileItem.js:739 ../desktopManager.js:329
 msgid "Open in Terminal"
 msgstr "Abrir en una terminal"
 
-#: ../desktopManager.js:415
+#: ../desktopManager.js:305
 msgid "New Folder"
 msgstr "Nueva carpeta"
 
-#: ../desktopManager.js:421
+#: ../desktopManager.js:311
 msgid "Paste"
 msgstr "Pegar"
 
-#: ../desktopManager.js:425
+#: ../desktopManager.js:315
 msgid "Undo"
 msgstr "Deshacer"
 
-#: ../desktopManager.js:429
+#: ../desktopManager.js:319
 msgid "Redo"
 msgstr "Rehacer"
 
-#: ../desktopManager.js:435
+#: ../desktopManager.js:325
 msgid "Show Desktop in Files"
 msgstr "Mostrar el escritorio en Archivos"
 
-#: ../desktopManager.js:445
+#: ../desktopManager.js:335
 msgid "Change Background…"
 msgstr "Cambiar el fondo..."
 
-#: ../desktopManager.js:454
+#: ../desktopManager.js:344
 msgid "Display Settings"
 msgstr "Configuración de pantalla"
 
-#: ../desktopManager.js:906
+#: ../desktopManager.js:797
 msgid "Are you sure you want to permanently delete these items?"
 msgstr "¿Borrar estos elementos de manera permanente?"
 
-#: ../desktopManager.js:906
+#: ../desktopManager.js:797
 msgid "If you delete an item, it will be permanently lost."
 msgstr "Si borra un elemento, éste se perderá para siempre."
 
-#: ../desktopManager.js:984
+#: ../desktopManager.js:875
 msgid "Rename"
 msgstr "Renombrar…"
 
-#: ../desktopManager.js:1025
+#: ../desktopManager.js:916
 msgid "New folder"
 msgstr "Nueva carpeta"
 

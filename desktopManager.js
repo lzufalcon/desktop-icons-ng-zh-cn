@@ -63,6 +63,11 @@ var DesktopManager = class {
                 this._updateDesktop();
             }
         });
+        this._nautilusSettingsId = Prefs.nautilusSettings.connect('changed', (obj, key) => {
+            if (key == 'show-image-thumbnails') {
+                this._updateDesktop();
+            }
+        });
 
         this.rubberBand = false;
 

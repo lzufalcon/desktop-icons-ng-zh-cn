@@ -101,6 +101,7 @@ function showPreferences() {
     nautilusBox.add(buildSelector(nautilusSettings, 'click-policy', _("Click type for open files"), { 'single': _("Single click"), 'double': _("Double click"), }));
     nautilusBox.add(buildSwitcher(gtkSettings, 'show-hidden', _("Show hidden files")));
     nautilusBox.add(buildSwitcher(nautilusSettings, 'show-delete-permanently', _("Show a context menu item to delete permanently")));
+    nautilusBox.add(buildSelector(nautilusSettings, 'show-image-thumbnails', _("Show image thumbnails"), { 'never': _("Never"), 'local-only': _("Local files only"),  'always': _("Always")}));
     window.show_all();
 }
 
