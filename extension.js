@@ -155,6 +155,51 @@ function getDesktopNumber(title) {
     }
 }
 
+function configureWindow(window) {
+    let desktopNumber = getDesktopNumber(window.get_title());
+    if ((desktopNumber >= 0) && (desktopNumber < data.desktopCoordinates.length)) {
+        window.desktopData = {};
+        window.desktopData.desktopNumber = desktopNumber;
+        window.desktopData.x = data.desktopCoordinates[desktopNumber].x;
+        window.desktopData.y = data.desktopCoordinates[desktopNumber].y;
+        window.desktopData.adjust = function() {
+            this.lower();
+            this.move_frame(false, this.desktopData.x, this.desktopData.y);
+        }.bind(window);
+
+        // Don't allow to move it with Alt+F7 or other special keys
+        window.connect('position-changed', window.desktopData.adjust);
+        // keep the window at the bottom when the user clicks on it
+        window.connect('raised', window.desktopData.adjust);
+
+        // Show the window in all desktops, and send it to the bottom
+        window.stick();
+        window.desktopData.adjust();
+        return true;
+    } else {
+        global.log(`Desktop number not valid: ${desktopNumber}`);
+        return false;
+    }
+}
+
+function checkWindowIsDesktop(window) {
+    /*
+     * If the window title is the same than the UUID (which was passed through a secure
+     * channel), then this is the window of our process, so we manage it.
+     */
+    let belongs;
+    try {
+        belongs = data.currentProcess.query_window_belongs_to(window);
+    } catch(err) {
+        belongs = false;
+    }
+    if (belongs) {
+        if (configureWindow(window)) {
+            data.desktopWindows.push(window);
+        }
+    }
+}
+
 /**
  * The true code that configures everything and launches the desktop program
  */
@@ -174,57 +219,19 @@ function innerEnable(removeId) {
         data.idMap = global.window_manager.connect_after('map', (obj, windowActor) => {
             for (let desktopWindow of data.desktopWindows) {
                 try {
-                    desktopWindow.lower();
+                    desktopWindow.desktopData.adjust();
                 } catch {}
             }
             if (!data.currentProcess) {
                 return false;
             }
             let window = windowActor.get_meta_window();
-            /*
-            * If the window title is the same than the UUID (which was passed through a secure
-            * channel), then this is the window of our process, so we manage it.
-            */
-            let belongs;
-            try {
-                belongs = data.currentProcess.query_window_belongs_to(window);
-            } catch(err) {
-                belongs = false;
-            }
-            if (belongs) {
-                /*
-                * the desktop window is big enough to cover all the monitors in the system,
-                * so the first thing to do is to move it to the minimum coordinate of the desktop.
-                *
-                * In theory, the minimum coordinates are always (0,0); but if there is only one
-                * monitor, the coordinates used are (0,27) because the top bar uses that size, and
-                * it makes no sense in having a piece of window always covered by the bar. Of
-                * course, that value isn't fixed, but calculated automatically each time the
-                * desktop geometry changes, so a bigger top bar will work fine.
-                */
-                let desktopNumber = getDesktopNumber(window.get_title());
-                if ((desktopNumber >= 0) && (desktopNumber < data.desktopCoordinates.length)) {
-                    window.move_frame(false,
-                                      data.desktopCoordinates[desktopNumber].x,
-                                      data.desktopCoordinates[desktopNumber].y);
-                    // Show the window in all desktops, and send it to the bottom
-                    window.stick();
-                    window.lower();
-                    data.desktopWindows.push(window);
-                    // keep the window at the bottom when the user clicks on it
-                    window.connect_after('raised', () => {
-                        window.lower();
-                    });
-                    // Don't allow to move it with Alt+F7 or other special keys
-                    window.connect('position-changed', () => {
-                        let desktopNumber = getDesktopNumber(window.get_title());
-                        window.move_frame(false,
-                                          data.desktopCoordinates[desktopNumber].x,
-                                          data.desktopCoordinates[desktopNumber].y);
-                    });
-                } else {
-                    global.log(`Desktop number not valid: ${desktopNumber}`);
-                }
+            if (window.get_title() == null) {
+                window.connect("notify::title", () => {
+                    checkWindowIsDesktop(window);
+                });
+            } else {
+                checkWindowIsDesktop(window);
             }
             return false;
         });
@@ -235,7 +242,7 @@ function innerEnable(removeId) {
              */
             for (let desktopWindow of data.desktopWindows) {
                 try {
-                    desktopWindow.lower();
+                    desktopWindow.desktopData.adjust();
                 } catch {}
             }
         });
