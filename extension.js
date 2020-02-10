@@ -32,29 +32,6 @@ const Mainloop = imports.mainloop;
 // This object will contain all the global variables
 let data = {};
 
-/**
- * Replaces a method in a class with our own method, and stores the original
- * one in 'data' using 'old_XXXX' (being XXXX the name of the original method),
- * or 'old_classId_XXXX' if 'classId' is defined. This is done this way for the
- * case that two methods with the same name must be replaced in two different
- * classes
- *
- * @param {class} className The class where to replace the method
- * @param {string} methodName The method to replace
- * @param {function} functionToCall The function to call as the replaced method
- * @param {string} [classId] an extra ID to identify the stored method when two
- *                           methods with the same name are replaced in
- *                           two different classes
- */
-function replaceMethod(className, methodName, functionToCall, classId) {
-    if (classId) {
-        data['old_' + classId + '_' + methodName] = className.prototype[methodName];
-    } else {
-        data['old_' + methodName] = className.prototype[methodName];
-    }
-    className.prototype[methodName] = functionToCall;
-}
-
 function init() {
     data.isEnabled = false;
     data.launchDesktopId = 0;
@@ -95,35 +72,6 @@ function removeDesktopWindowFromList(windowList) {
     }
     return returnVal;
 }
-
-/**
- * Method replacement for Meta.Display.get_tab_list
- * It removes the desktop window from the list of windows in the switcher
- *
- * @param {*} type
- * @param {*} workspace
- */
-function newGetTabList(type, workspace) {
-    let windowList = data.old_get_tab_list.apply(this, [type, workspace]);
-    return removeDesktopWindowFromList(windowList);
-};
-
-/**
- * Method replacement for Shell.Global.get_window_actors
- * It removes the desktop window from the list of windows in the Activities mode
- */
-function newGetWindowActors() {
-    let windowList = data.old_get_window_actors.apply(this, []);
-    return removeDesktopWindowFromList(windowList);
-}
-
-/**
- * Method replacement for Meta.Workspace.list_windows
- */
-function newListWindows() {
-    let windowList = data.old_list_windows.apply(this, []);
-    return removeDesktopWindowFromList(windowList);
-};
 
 /**
  * Enables the extension
@@ -175,6 +123,22 @@ function configureWindow(window) {
         // Show the window in all desktops, and send it to the bottom
         window.stick();
         window.desktopData.adjust();
+
+        // Override skip_taskbar and window_type to be able to set the value we want
+        window.is_skip_taskbar = function() {
+            return true;
+        }
+        window.get_window_type = function() {
+            return Meta.WindowType.DESKTOP;
+        }
+        Object.defineProperty(window, 'skip_taskbar', {
+            value: true
+        });
+        Object.defineProperty(window, 'window_type', {
+            value: Meta.WindowType.DESKTOP
+        });
+        g_object_notify('skip-taskbar');
+        g_object_notify('window-type');
         return true;
     } else {
         global.log(`Desktop number not valid: ${desktopNumber}`);
@@ -212,9 +176,6 @@ function innerEnable(removeId) {
 
     // under X11 we don't need to cheat, so only do all this under wayland
     if (Meta.is_wayland_compositor()) {
-        replaceMethod(Meta.Display, 'get_tab_list', newGetTabList);
-        replaceMethod(Shell.Global, 'get_window_actors', newGetWindowActors);
-        replaceMethod(Meta.Workspace, 'list_windows', newListWindows);
 
         data.idMap = global.window_manager.connect_after('map', (obj, windowActor) => {
             for (let desktopWindow of data.desktopWindows) {
@@ -292,16 +253,6 @@ function innerEnable(removeId) {
 function disable() {
 
     data.isEnabled = false;
-    // restore external methods only if have been intercepted
-    if (data.old_get_tab_list) {
-        Meta.Display.prototype['get_tab_list'] = data.old_get_tab_list;
-    }
-    if (data.old_get_window_actors) {
-        Shell.Global.prototype['get_window_actors'] = data.old_get_window_actors;
-    }
-    if (data.old_list_windows) {
-        Meta.Workspace.prototype['list_windows'] = data.old_list_windows;
-    }
     // disconnect signals only if connected
     if (data.switchWorkspaceId) {
         global.window_manager.disconnect(data.switchWorkspaceId);
