@@ -4,6 +4,7 @@
       * Copy files instead of move when using DnD into another drive
       * Removed flicker when a file is created or removed
       * Fix DnD for Chrome and other programs
+      * Now, under X11, it is fully autonomous, thus can be used in any system
       * Use GtkApplication
 
 * Version 0.10.0 (2020/02/22)

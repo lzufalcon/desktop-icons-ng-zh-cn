@@ -239,38 +239,37 @@ function innerEnable(removeId) {
                 } catch {}
             }
         });
-    }
-
-    /*
-     * If the desktop geometry changes (because a new monitor has been added, for example),
-     * we kill the desktop program. It will be relaunched automatically with the new geometry,
-     * thus adapting to it on-the-fly.
-     */
-    data.monitorsChangedId = Main.layoutManager.connect('monitors-changed', () => {
-        data.reloadTime = 3000; // give more time in this case, to ensure that everything has changed
-        killCurrentProcess();
-    });
-
-    data.desktopCoordinates = [];
-
-    /*
-     * This callback allows to detect a change in the working area (like when changing the Zoom value)
-     */
-    data.sizeChangedId = global.window_manager.connect('size-changed', () => {
-        if (data.desktopCoordinates.length != Main.layoutManager.monitors.length) {
+        /*
+         * If the desktop geometry changes (because a new monitor has been added, for example),
+         * we kill the desktop program. It will be relaunched automatically with the new geometry,
+         * thus adapting to it on-the-fly.
+         */
+        data.monitorsChangedId = Main.layoutManager.connect('monitors-changed', () => {
+            data.reloadTime = 3000; // give more time in this case, to ensure that everything has changed
             killCurrentProcess();
-            return;
-        }
-        for(let monitorIndex = 0; monitorIndex < Main.layoutManager.monitors.length; monitorIndex++) {
-            let ws = global.workspace_manager.get_workspace_by_index(0);
-            let area = ws.get_work_area_for_monitor(monitorIndex);
-            let area2 = data.desktopCoordinates[monitorIndex];
-            if ((area.width != area2.width) || (area.height != area2.height)) {
+        });
+
+        data.desktopCoordinates = [];
+
+        /*
+        * This callback allows to detect a change in the working area (like when changing the Zoom value)
+        */
+        data.sizeChangedId = global.window_manager.connect('size-changed', () => {
+            if (data.desktopCoordinates.length != Main.layoutManager.monitors.length) {
                 killCurrentProcess();
                 return;
             }
-        }
-    });
+            for(let monitorIndex = 0; monitorIndex < Main.layoutManager.monitors.length; monitorIndex++) {
+                let ws = global.workspace_manager.get_workspace_by_index(0);
+                let area = ws.get_work_area_for_monitor(monitorIndex);
+                let area2 = data.desktopCoordinates[monitorIndex];
+                if ((area.width != area2.width) || (area.height != area2.height)) {
+                    killCurrentProcess();
+                    return;
+                }
+            }
+        });
+    }
 
     data.isEnabled = true;
     if (data.launchDesktopId) {
@@ -402,36 +401,39 @@ function launchDesktop() {
     argv.push('-P');
     argv.push(ExtensionUtils.getCurrentExtension().path);
 
-    let first = true;
+    if (Meta.is_wayland_compositor()) {
+        // Pass the geometry only under Wayland
+        let first = true;
 
-    data.desktopCoordinates = [];
+        data.desktopCoordinates = [];
 
-    let scale;
-    for(let monitorIndex = 0; monitorIndex < Main.layoutManager.monitors.length; monitorIndex++) {
-        let ws = global.workspace_manager.get_workspace_by_index(0);
-        let area = ws.get_work_area_for_monitor(monitorIndex);
-        // send the working area of each monitor in the desktop
-        argv.push('-D');
-        if (ExtensionUtils.versionCheck(['3.30'], Config.PACKAGE_VERSION)) {
-            scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
-        } else {
-            scale = Main.layoutManager.monitors[monitorIndex].geometry_scale;
+        let scale;
+        for(let monitorIndex = 0; monitorIndex < Main.layoutManager.monitors.length; monitorIndex++) {
+            let ws = global.workspace_manager.get_workspace_by_index(0);
+            let area = ws.get_work_area_for_monitor(monitorIndex);
+            // send the working area of each monitor in the desktop
+            argv.push('-D');
+            if (ExtensionUtils.versionCheck(['3.30'], Config.PACKAGE_VERSION)) {
+                scale = St.ThemeContext.get_for_stage(global.stage).scale_factor;
+            } else {
+                scale = Main.layoutManager.monitors[monitorIndex].geometry_scale;
+            }
+            argv.push(`${area.x}:${area.y}:${area.width}:${area.height}:${scale}`);
+            data.desktopCoordinates.push({x: area.x, y: area.y, width: area.width, height: area.height, zoom: scale})
+            if (first || (area.x < data.minx)) {
+                data.minx = area.x;
+            }
+            if (first || (area.y < data.miny)) {
+                data.miny = area.y;
+            }
+            if (first || ((area.x + area.width) > data.maxx)) {
+                data.maxx = area.x + area.width;
+            }
+            if (first || ((area.y + area.height) > data.maxy)) {
+                data.maxy = area.y + area.height;
+            }
+            first = false;
         }
-        argv.push(`${area.x}:${area.y}:${area.width}:${area.height}:${scale}`);
-        data.desktopCoordinates.push({x: area.x, y: area.y, width: area.width, height: area.height, zoom: scale})
-        if (first || (area.x < data.minx)) {
-            data.minx = area.x;
-        }
-        if (first || (area.y < data.miny)) {
-            data.miny = area.y;
-        }
-        if (first || ((area.x + area.width) > data.maxx)) {
-            data.maxx = area.x + area.width;
-        }
-        if (first || ((area.y + area.height) > data.maxy)) {
-            data.maxy = area.y + area.height;
-        }
-        first = false;
     }
 
     data.currentProcess = new LaunchSubprocess(0, "DING", "-U");
@@ -448,21 +450,13 @@ function launchDesktop() {
         if (!data.isEnabled || !data.currentProcess || obj !== data.currentProcess.subprocess) {
             return;
         }
-        if (obj.get_if_exited()) {
-            let retval = obj.get_exit_status();
-            if (retval != 0) {
-                data.reloadTime = 1000;
-            }
-        } else {
-            data.reloadTime = 1000;
-        }
         data.desktopWindows = [];
         data.currentProcess = null;
         if (data.isEnabled) {
             if (data.launchDesktopId) {
                 GLib.source_remove(data.launchDesktopId);
             }
-            data.launchDesktopId = Mainloop.timeout_add(data.reloadTime, () => {
+            data.launchDesktopId = Mainloop.timeout_add(1000, () => {
                 data.launchDesktopId = 0;
                 launchDesktop();
                 return false;

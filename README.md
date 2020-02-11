@@ -37,7 +37,8 @@ extension (extension.js) that have these roles:
  * Identify the desktop windows and keep it at the bottom of the windows stack, in all desktops
 
 This last part is paramount in Wayland systems, because there an application can't set its role
-as freely as in X11.
+as freely as in X11. But when it is used under X11, the extension is not needed, which means
+that it can be used in any other window system.
 
 Of course, to avoid breaking the security model of Wayland, the process for identifying the
 window is somewhat convoluted, to ensure that only the process launched from the extension can
@@ -71,7 +72,7 @@ from the tab switcher and the Activities mode. These are 'Meta.Display.get_tab_l
 
 ## Launching the Desktop Icons application stand-alone
 
-It is possible to launch the desktop icons application in stand-alone mode to do debugging and
+It is possible to launch the desktop icons application in stand-alone mode for debugging and
 testing, but, of course, it will behave as a classic Gtk program: there will be a window with its
 titlebar, and the background won't be transparent (it could be, but since the idea is to do debug,
 it is better this way). To do so, just launch './ding.js' from the repository directory. If it can't
