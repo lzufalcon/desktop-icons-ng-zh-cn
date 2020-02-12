@@ -137,8 +137,10 @@ function configureWindow(window) {
         Object.defineProperty(window, 'window_type', {
             value: Meta.WindowType.DESKTOP
         });
-        g_object_notify('skip-taskbar');
-        g_object_notify('window-type');
+        /* Can't notify skip-taskbar because gnome shell does an ugly hack, presuming that
+         * it is triggered only when it has really changed, and since it is done in C,
+         * it can't see the changes done in Javascript. Thus only notify 'window-type' */
+        window.notify('window-type');
         return true;
     } else {
         global.log(`Desktop number not valid: ${desktopNumber}`);
