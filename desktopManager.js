@@ -952,7 +952,8 @@ var DesktopManager = class {
 
     doDeletePermanently() {
         let filelist = "";
-        for(let fileItem of this._fileList) {
+        for(let uri in this._fileList) {
+            let fileItem = this._fileList[uri];
             if (fileItem.isSelected) {
                 if (filelist != "") {
                     filelist += ", "
@@ -963,7 +964,8 @@ var DesktopManager = class {
         let renameWindow = new AskConfirmPopup.AskConfirmPopup(_("Are you sure you want to permanently delete these items?"), `${_("If you delete an item, it will be permanently lost.")}\n\n${filelist}`, null);
         if (renameWindow.run()) {
             this._permanentDeleteError = false;
-            for(let fileItem of this._fileList) {
+            for(let uri in this._fileList) {
+                let fileItem = this._fileList[uri];
                 if (fileItem.isSelected) {
                     this._toDelete.push(fileItem.file);
                 }
