@@ -30,6 +30,7 @@ let lastCommand = null;
 let codePath = '.';
 let errorFound = false;
 let asDesktop = false;
+let autonomous = false;
 for(let arg of ARGV) {
     if (lastCommand == null) {
         switch(arg) {
@@ -48,6 +49,9 @@ for(let arg of ARGV) {
         case '-P':
         case '-D':
             lastCommand = arg;
+            break;
+        case '-A':
+            autonomous = true;
             break;
         default:
             print(`Parameter ${arg} not recognized. Aborting.`);
@@ -71,11 +75,16 @@ for(let arg of ARGV) {
     lastCommand = null;
 }
 
-if (desktops.length == 0) {
-    /* if no desktop list is provided, like when launching the program in stand-alone mode,
-     * configure a 1280x720 desktop
-     */
-    desktops.push({x:0, y:0, width: 1280, height: 720, zoom: 1});
+if (autonomous) {
+    desktops = [];
+    asDesktop = true;
+} else {
+    if (desktops.length == 0) {
+        /* if no desktop list is provided, like when launching the program in stand-alone mode,
+        * configure a 1280x720 desktop
+        */
+        desktops.push({x:0, y:0, width: 1280, height: 720, zoom: 1});
+    }
 }
 
 // this allows to import files from the current folder

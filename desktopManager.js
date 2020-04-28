@@ -22,6 +22,7 @@ const Gtk = imports.gi.Gtk;
 const Gdk = imports.gi.Gdk;
 const Gio = imports.gi.Gio;
 
+const Mainloop = imports.mainloop;
 const FileItem = imports.fileItem;
 const DesktopGrid = imports.desktopGrid;
 const DesktopIconsUtil = imports.desktopIconsUtil;
@@ -88,11 +89,14 @@ var DesktopManager = class {
 
         this._configureSelectionColor();
         this._createDesktopBackgroundMenu();
-        this._createGrids();
-
         DBusUtils.NautilusFileOperationsProxy.connect('g-properties-changed', this._undoStatusChanged.bind(this));
         this._fileList = [];
-        this._readFileList();
+        if (desktopList.length == 0) {
+            this._initialize_screens();
+        } else {
+            this._createGrids();
+            this._readFileList();
+        }
 
         // Check if Nautilus is available
         try {
@@ -104,6 +108,67 @@ var DesktopManager = class {
                                                                   true);
         }
         this._pendingDropFiles = {};
+    }
+
+    _initialize_screens() {
+        this._monitors = [];
+        let defaultDisplay = Gdk.Display.get_default();
+        let monitors = defaultDisplay.get_n_monitors();
+        for (let n = 0; n < monitors; n++) {
+            this._add_monitor(defaultDisplay.get_monitor(n));
+        }
+
+        defaultDisplay.connect("monitor-added", (obj, mon) => {
+            this._add_monitor(mon);
+            // for some reason, after adding a monitor, the workspace isn't recalculated until 0,6 seconds after
+            this._refreshScreens(false, 1500);
+        });
+        defaultDisplay.connect("monitor-removed", (obj, mon) => {
+            this._monitors.splice( this._monitors.indexOf(mon), 1 );
+            // for some reason, after removing a monitor, the workspace isn't recalculated until 0,6 seconds after
+            this._refreshScreens(false, 1500);
+        });
+        this._refreshScreens(true, 2000);
+    }
+
+    _add_monitor(monitor) {
+        this._monitors.push(monitor);
+        monitor.connect("notify::scale-factor", () => {
+            print("Changed scale");
+            // for some reason, it needs 2,4 seconds to change the value returned in get_scale_factor() after the signal
+            this._refreshScreens(false, 3500);
+        });
+    }
+
+    _refreshScreens(read_filelist, timeout) {
+        if (this._refreshScreenID) {
+            GLib.source_remove(this._refreshScreenID);
+            this._max_refresh_timeout = max(timeout, this._max_refresh_timeout);
+        } else {
+            this._max_refresh_timeout = timeout;
+        }
+        this._refreshScreenID = Mainloop.timeout_add(this._max_refresh_timeout, () => {
+            this._removeAllFilesFromGrids();
+            this._desktopList = [];
+            let defaultDisplay = Gdk.Display.get_default();
+            let nMonitors = defaultDisplay.get_n_monitors();
+            for(let n = 0; n < nMonitors; n++) {
+                let monitor = defaultDisplay.get_monitor(n);
+                let workarea = monitor.get_workarea();
+                let scale = monitor.get_scale_factor();
+                let geometry = monitor.get_geometry();
+                print(`workarea: ${workarea.x}:${workarea.y}:${workarea.width}:${workarea.height}:${scale}; geometry: ${geometry.x}:${geometry.y}:${geometry.width}:${geometry.height}`);
+                this._desktopList.push({x:workarea.x * scale, y:workarea.y * scale, width: workarea.width * scale, height: workarea.height * scale, zoom: scale});
+            }
+            print("Done workareas");
+            this._createGrids();
+            this._updateDesktop();
+            if (read_filelist) {
+                this._readFileList();
+            }
+            this._refreshScreenID = 0;
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _createGrids() {
