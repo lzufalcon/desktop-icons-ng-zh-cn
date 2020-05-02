@@ -1104,14 +1104,17 @@ var DesktopManager = class {
             destination = Gio.File.new_for_path(GLib.build_filenamev([GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP), finalName]));
             counter++;
         } while(destination.query_exists(null));
-        try {
-            file.copy(destination, Gio.FileCopyFlags.NONE, null, null);
-            let info = new Gio.FileInfo();
-            info.set_attribute_string('metadata::nautilus-drop-position', `${this._clickX},${this._clickY}`);
-            info.set_attribute_string('metadata::nautilus-icon-position', '');
-            destination.set_attributes_from_info(info, Gio.FileQueryInfoFlags.NONE, null);
-        } catch(e) {
-            print(`Failed to create template ${e.message}`);
-        }
+
+        this._pendingDropFiles[destination.get_basename()] = [this._clickX, this._clickY];
+        file.copy_async(destination, Gio.FileCopyFlags.NONE, GLib.PRIORITY_DEFAULT, null, null, (source, result) => {
+            try {
+                if (source.copy_finish(result)) {
+                    return;
+                }
+            } catch(e) {
+                print(`Failed to create template ${e.message}`);
+            }
+            delete this._pendingDropFiles[destination.get_basename()];
+        });
     }
 }
