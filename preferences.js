@@ -86,42 +86,42 @@ function showPreferences() {
     frame.set_spacing(10);
     frame.set_border_width(10);
 
-    frame.add(buildSelector(desktopSettings, 'icon-size', _("Size for the desktop icons"), {'tiny': _("Tiny"), 'small': _("Small"), 'standard': _("Standard"), 'large': _("Large") }));
-    frame.add(buildSwitcher(desktopSettings, 'show-home', _("Show the personal folder in the desktop")));
-    frame.add(buildSwitcher(desktopSettings, 'show-trash', _("Show the trash icon in the desktop")));
+    frame.add(buildSelector(desktopSettings, 'icon-size', _("桌面图标大小"), {'tiny': _("海儿小"), 'small': _("小"), 'standard': _("标准"), 'large': _("贼大") }));
+    frame.add(buildSwitcher(desktopSettings, 'show-home', _("在桌面上显示个人文件夹")));
+    frame.add(buildSwitcher(desktopSettings, 'show-trash', _("在桌面上显示回收站")));
     frame.add(buildSelector(desktopSettings,
                             'start-corner',
-                            _("New icons alignment"),
-                            {'top-left': _("Top-left corner"),
-                             'top-right': _("Top-right corner"),
-                             'bottom-left': _("Bottom-left corner"),
-                             'bottom-right': _("Bottom-right corner")
+                            _("新图标对齐"),
+                            {'top-left': _("左上角"),
+                             'top-right': _("右上角"),
+                             'bottom-left': _("左下角"),
+                             'bottom-right': _("右下角")
                             }));
 
     frame.add(new Gtk.Separator({ orientation: Gtk.Orientation.HORIZONTAL }));
 
-    let nautilusFrame = new Gtk.Frame({ label: _("Settings shared with Nautilus"),
+    let nautilusFrame = new Gtk.Frame({ label: _("与 Nautilus 共享的设置"),
                                         shadow_type: Gtk.ShadowType.ETCHED_IN });
     let nautilusBox = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, margin: 5, spacing: 10});
     nautilusFrame.add(nautilusBox);
     frame.add(nautilusFrame);
 
-    nautilusBox.add(buildSelector(nautilusSettings, 'click-policy', _("Click type for open files"), { 'single': _("Single click"), 'double': _("Double click"), }));
-    nautilusBox.add(buildSwitcher(gtkSettings, 'show-hidden', _("Show hidden files")));
-    nautilusBox.add(buildSwitcher(nautilusSettings, 'show-delete-permanently', _("Show a context menu item to delete permanently")));
+    nautilusBox.add(buildSelector(nautilusSettings, 'click-policy', _("打开文件的方式"), { 'single': _("单击打开"), 'double': _("双击打开"), }));
+    nautilusBox.add(buildSwitcher(gtkSettings, 'show-hidden', _("显示隐藏文件")));
+    nautilusBox.add(buildSwitcher(nautilusSettings, 'show-delete-permanently', _("在右键菜单中显示\”永久删除\“")));
     nautilusBox.add(buildSelector(nautilusSettings,
                                   'executable-text-activation',
-                                  _("Action to do when launching a program from the desktop"), {
-                                      'display': _("Display the content of the file"),
-                                      'launch': _("Launch the file"),
-                                      'ask': _("Ask what to do")
+                                  _("从桌面启动程序时要做的操作（这条是机翻）"), {
+                                      'display': _("显示文件的内容"),
+                                      'launch': _("启动文件"),
+                                      'ask': _("询问我")
                                    }));
     nautilusBox.add(buildSelector(nautilusSettings,
                                   'show-image-thumbnails',
-                                  _("Show image thumbnails"), {
-                                      'never': _("Never"),
-                                      'local-only': _("Local files only"),
-                                      'always': _("Always")
+                                  _("显示图像缩略图"), {
+                                      'never': _("从不"),
+                                      'local-only': _("仅限本地文件"),
+                                      'always': _("总是")
                                    }));
     window.show_all();
 }

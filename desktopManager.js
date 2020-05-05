@@ -103,7 +103,6 @@ var DesktopManager = class {
                                                                   null,
                                                                   true);
         }
-        this._pendingDropFiles = {};
     }
 
     _createGrids() {
@@ -154,15 +153,12 @@ var DesktopManager = class {
         for(let element of fileList) {
             let file = Gio.File.new_for_uri(element);
             if (!file.is_native() || !file.query_exists(null)) {
-                if (dropCoordinates != null) {
-                    this._pendingDropFiles[file.get_basename()] = dropCoordinates;
-                }
                 continue;
             }
             let info = new Gio.FileInfo();
             info.set_attribute_string('metadata::nautilus-icon-position', '');
             if (dropCoordinates != null) {
-                info.set_attribute_string('metadata::nautilus-drop-position', `${dropCoordinates[0]},${dropCoordinates[1]}`);
+                info.set_attribute_string('metadata::nautilus-drop-position', dropCoordinates);
             }
             try {
                 file.set_attributes_from_info(info, Gio.FileQueryInfoFlags.NONE, null);
@@ -206,7 +202,7 @@ var DesktopManager = class {
         case 1:
         case 2:
             if (fileList.length != 0) {
-                this.clearFileCoordinates(fileList, [xDestination, yDestination]);
+                this.clearFileCoordinates(fileList, `${xDestination},${yDestination}`);
                 let data = Gio.File.new_for_uri(fileList[0]).query_info('id::filesystem', Gio.FileQueryInfoFlags.NONE, null);
                 let id_fs = data.get_attribute_string('id::filesystem');
                 if (this.desktopFsId == id_fs) {
@@ -405,55 +401,52 @@ var DesktopManager = class {
                 DBusUtils.GnomeNautilusPreviewProxy.ShowFileRemote(selection[0].uri, 0, false);
                 return true;
             }
-        } else if (isCtrl && ((symbol == Gdk.KEY_A) || (symbol == Gdk.KEY_a))) {
-            this._selectAll();
-            return true;
         }
         return false;
     }
 
     _createDesktopBackgroundMenu() {
         this._menu = new Gtk.Menu();
-        let newFolder = new Gtk.MenuItem({label: _("New Folder")});
+        let newFolder = new Gtk.MenuItem({label: _("新建文件夹")});
         newFolder.connect("activate", () => this._newFolder());
         this._menu.add(newFolder);
 
-        this._newDocumentItem = new Gtk.MenuItem({label: _("New Document")});
+        this._newDocumentItem = new Gtk.MenuItem({label: _("新建文档")});
         this._menu.add(this._newDocumentItem);
 
         this._menu.add(new Gtk.SeparatorMenuItem());
 
-        this._pasteMenuItem = new Gtk.MenuItem({label: _("Paste")});
+        this._pasteMenuItem = new Gtk.MenuItem({label: _("粘贴")});
         this._pasteMenuItem.connect("activate", () => this._doPaste());
         this._menu.add(this._pasteMenuItem);
 
-        this._undoMenuItem = new Gtk.MenuItem({label: _("Undo")});
+        this._undoMenuItem = new Gtk.MenuItem({label: _("撤销")});
         this._undoMenuItem.connect("activate", () => this._doUndo());
         this._menu.add(this._undoMenuItem);
 
-        this._redoMenuItem = new Gtk.MenuItem({label: _("Redo")});
+        this._redoMenuItem = new Gtk.MenuItem({label: _("重做")});
         this._redoMenuItem.connect("activate", () => this._doRedo());
         this._menu.add(this._redoMenuItem);
 
         this._menu.add(new Gtk.SeparatorMenuItem());
 
-        let selectAll = new Gtk.MenuItem({label: _("Select all")});
+        let selectAll = new Gtk.MenuItem({label: _("全选")});
         selectAll.connect("activate", () => this._selectAll());
         this._menu.add(selectAll);
 
         this._menu.add(new Gtk.SeparatorMenuItem());
 
-        this._showDesktopInFilesMenuItem = new Gtk.MenuItem({label: _("Show Desktop in Files")});
+        this._showDesktopInFilesMenuItem = new Gtk.MenuItem({label: _("在文件打开")});
         this._showDesktopInFilesMenuItem.connect("activate", () => this._onOpenDesktopInFilesClicked());
         this._menu.add(this._showDesktopInFilesMenuItem);
 
-        this._openTerminalMenuItem = new Gtk.MenuItem({label: _("Open in Terminal")});
+        this._openTerminalMenuItem = new Gtk.MenuItem({label: _("在终端打开")});
         this._openTerminalMenuItem.connect("activate", () => this._onOpenTerminalClicked());
         this._menu.add(this._openTerminalMenuItem);
 
         this._menu.add(new Gtk.SeparatorMenuItem());
 
-        this._changeBackgroundMenuItem = new Gtk.MenuItem({label: _("Change Background…")});
+        this._changeBackgroundMenuItem = new Gtk.MenuItem({label: _("更换壁纸")});
         this._changeBackgroundMenuItem.connect("activate", () => {
             let desktopFile = Gio.DesktopAppInfo.new('gnome-background-panel.desktop');
             desktopFile.launch([], null);
@@ -462,14 +455,14 @@ var DesktopManager = class {
 
         this._menu.add(new Gtk.SeparatorMenuItem());
 
-        this._displaySettingsMenuItem = new Gtk.MenuItem({label: _("Display Settings")});
+        this._displaySettingsMenuItem = new Gtk.MenuItem({label: _("显示设置")});
         this._displaySettingsMenuItem.connect("activate", () => {
             let desktopFile = Gio.DesktopAppInfo.new('gnome-display-panel.desktop');
             desktopFile.launch([], null);
         });
         this._menu.add(this._displaySettingsMenuItem);
 
-        this._settingsMenuItem = new Gtk.MenuItem({label: _("Settings")});
+        this._settingsMenuItem = new Gtk.MenuItem({label: _("设置")});
         this._settingsMenuItem.connect("activate", () => Prefs.showPreferences());
         this._menu.add(this._settingsMenuItem);
         this._menu.show_all();
@@ -696,13 +689,6 @@ var DesktopManager = class {
                                 continue;
                             }
                             fileList.push(fileItem);
-                            if (fileItem.dropCoordinates == null) {
-                                let basename = fileItem.file.get_basename();
-                                if (basename in this._pendingDropFiles) {
-                                    fileItem.dropCoordinates = this._pendingDropFiles[basename];
-                                    delete this._pendingDropFiles[basename];
-                                }
-                            }
                         }
                         this._removeAllFilesFromGrids();
                         this._fileList = fileList;
@@ -899,26 +885,6 @@ var DesktopManager = class {
         }
     }
 
-    _deleteHelper(file) {
-        file.delete_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
-            this._deletingFilesRecursively = false;
-            try {
-                source.delete_finish(res);
-            } catch(e) {
-                let windowError = new ShowErrorPopup.ShowErrorPopup(
-                    _("Error while deleting files"),
-                    e.message,
-                    null,
-                    false);
-                windowError.run();
-                this._toDelete = [];
-                return;
-            }
-            // continue with the next file
-            this._deleteRecursively();
-        });
-    }
-
     _deleteRecursively() {
         if (this._deletingFilesRecursively || (this._toDelete.length == 0)) {
             return;
@@ -926,46 +892,56 @@ var DesktopManager = class {
         this._deletingFilesRecursively = true;
         let nextFileToDelete = this._toDelete.shift();
         if (nextFileToDelete.query_file_type(Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null) == Gio.FileType.DIRECTORY) {
-            nextFileToDelete.enumerate_children_async(
-                Enums.DEFAULT_ATTRIBUTES,
-                Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS,
-                GLib.PRIORITY_DEFAULT,
-                null,
-                (source, res) => {
-                    try {
-                        let fileEnum = source.enumerate_children_finish(res);
-                        // insert again the folder at the beginning
-                        this._toDelete.unshift(source);
-                        let info;
-                        let hasChilds = false;
-                        while ((info = fileEnum.next_file(null))) {
-                            let file = fileEnum.get_child(info);
-                            // insert the children to the beginning of the array, to be deleted first
-                            this._toDelete.unshift(file);
-                            hasChilds = true;
+            nextFileToDelete.enumerate_children_async(Enums.DEFAULT_ATTRIBUTES, Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                let fileEnum = source.enumerate_children_finish(res);
+                // insert again the folder at the beginning
+                this._toDelete.unshift(source);
+                let info;
+                let hasChilds = false;
+                while ((info = fileEnum.next_file(null))) {
+                    let file = fileEnum.get_child(info);
+                    // insert the children to the beginning of the array, to be deleted first
+                    this._toDelete.unshift(file);
+                    hasChilds = true;
+                }
+                if (!hasChilds) {
+                    // the folder is empty, so it can be deleted
+                    this._toDelete.shift().delete_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                        try {
+                            source.delete_finish(res);
+                        } catch(e) {
+                            let windowError = new ShowErrorPopup.ShowErrorPopup(_("Error while deleting files"),
+                                                                                _("There was an error while trying to permanently delete the folder {:}.").replace('{:}', source.get_parse_name()),
+                                                                                null,
+                                                                                false);
+                            windowError.run();
+                            return;
                         }
-                        if (!hasChilds) {
-                            // the folder is empty, so it can be deleted
-                            this._deleteHelper(this._toDelete.shift());
-                        } else {
-                            // continue processing the list
-                            this._deletingFilesRecursively = false;
-                            this._deleteRecursively();
-                        }
-                    } catch(e) {
-                        let windowError = new ShowErrorPopup.ShowErrorPopup(
-                            _("Error while deleting files"),
-                            e.message,
-                            null,
-                            false);
-                        windowError.run();
-                        this._toDelete = [];
+                        // continue with the next file
                         this._deletingFilesRecursively = false;
-                        return;
-                    }
-                });
+                        this._deleteRecursively();
+                    }); // remove it from the list (yes, again)
+                }
+                // continue processing the list
+                this._deletingFilesRecursively = false;
+                this._deleteRecursively();
+            });
         } else {
-            this._deleteHelper(nextFileToDelete);
+            nextFileToDelete.delete_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                try {
+                    source.delete_finish(res);
+                } catch(e) {
+                    let windowError = new ShowErrorPopup.ShowErrorPopup(_("Error while deleting files"),
+                                                                        _("There was an error while trying to permanently delete the file {:}.").replace('{:}', source.get_parse_name()),
+                                                                        null,
+                                                                        false);
+                    windowError.run();
+                    return;
+                }
+                // continue with the next file
+                this._deletingFilesRecursively = false;
+                this._deleteRecursively();
+            });
         }
     }
 
@@ -979,10 +955,7 @@ var DesktopManager = class {
                 filelist += `"${fileItem.fileName}"`;
             }
         }
-        let renameWindow = new AskConfirmPopup.AskConfirmPopup(
-            _("Are you sure you want to permanently delete these items?"),
-            `${_("If you delete an item, it will be permanently lost.")}\n\n${filelist}`,
-            null);
+        let renameWindow = new AskConfirmPopup.AskConfirmPopup(_("Are you sure you want to permanently delete these items?"), `${_("If you delete an item, it will be permanently lost.")}\n\n${filelist}`, null);
         if (renameWindow.run()) {
             this._permanentDeleteError = false;
             for(let fileItem of this._fileList) {

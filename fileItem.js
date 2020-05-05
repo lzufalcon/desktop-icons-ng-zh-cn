@@ -138,10 +138,6 @@ var FileItem = class {
     }
 
     _setFileName(text) {
-        if (this._fileExtra == Enums.FileType.USER_DIRECTORY_HOME) {
-            // TRANSLATORS: "Home" is the text that will be shown in the user's personal folder
-            text = _("Home");
-        }
         this._currentFileName = text;
         this._eventBox.set_tooltip_text(text);
         for (let character of ".,-_@:") {
@@ -701,35 +697,35 @@ var FileItem = class {
             this._menu = null;
             this._menuId = null;
         });
-        let open = new Gtk.MenuItem({label:_('Open')});
+        let open = new Gtk.MenuItem({label:_('打开')});
         open.connect('activate', () => this.doOpen());
         this._menu.add(open);
         switch (this._fileExtra) {
         case Enums.FileType.NONE:
             if (!this._isDirectory) {
-                this._actionOpenWith = new Gtk.MenuItem({label: _('Open With Other Application')});
+                this._actionOpenWith = new Gtk.MenuItem({label: _('使用其他程序打开')});
                 this._actionOpenWith.connect('activate', () => this._desktopManager.doOpenWith());
                 this._menu.add(this._actionOpenWith);
             } else {
                 this._actionOpenWith = null;
             }
             this._menu.add(new Gtk.SeparatorMenuItem());
-            this._actionCut = new Gtk.MenuItem({label:_('Cut')});
+            this._actionCut = new Gtk.MenuItem({label:_('剪切')});
             this._actionCut.connect('activate', () => {this._desktopManager.doCut();});
             this._menu.add(this._actionCut);
-            this._actionCopy = new Gtk.MenuItem({label:_('Copy')});
+            this._actionCopy = new Gtk.MenuItem({label:_('复制')});
             this._actionCopy.connect('activate', () => {this._desktopManager.doCopy();});
             this._menu.add(this._actionCopy);
             if (this.canRename()) {
-                let rename = new Gtk.MenuItem({label:_('Rename…')});
+                let rename = new Gtk.MenuItem({label:_('重命名')});
                 rename.connect('activate', () => this.doRename());
                 this._menu.add(rename);
             }
-            this._actionTrash = new Gtk.MenuItem({label:_('Move to Trash')});
+            this._actionTrash = new Gtk.MenuItem({label:_('移到回收站')});
             this._actionTrash.connect('activate', () => {this._desktopManager.doTrash();});
             this._menu.add(this._actionTrash);
             if (Prefs.nautilusSettings.get_boolean('show-delete-permanently')) {
-                this._actionDelete = new Gtk.MenuItem({label:_('Delete permanently')});
+                this._actionDelete = new Gtk.MenuItem({label:_('永久删除')});
                 this._actionDelete.connect('activate', () => {this._desktopManager.doDeletePermanently();});
                 this._menu.add(this._actionDelete);
             }
