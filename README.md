@@ -1,4 +1,4 @@
-# DING Desktop Icons New Generation
+# DING Desktop Icons New Generation 中文版！
 
 ## What  is it
 
